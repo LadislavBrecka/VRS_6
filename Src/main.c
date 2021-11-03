@@ -47,8 +47,8 @@ int main(void)
 
   while (1)
   {
-	  LL_USART_TransmitData8(USART2, tx_data++);
-	  tx_data == ('z' + 1) ? tx_data = 'a' : tx_data;
+//	  LL_USART_TransmitData8(USART2, tx_data++);
+//	  tx_data == ('z' + 1) ? tx_data = 'a' : tx_data;
 
 	  LL_mDelay(50);
   }
@@ -92,26 +92,37 @@ void SystemClock_Config(void)
 
 void process_serial_data(uint8_t ch)
 {
+	static const char prikaz1[6] = "ledOn";
+	static const char prikaz2[7] = "ledOff";
 	static uint8_t count = 0;
+	static uint8_t state = 0;
 
-	if(ch == 'a')
-	{
-		count++;
-
-		if(count >= 3)
-		{
-			if((LL_GPIO_ReadInputPort(GPIOB) & (1 << 3)) >> 3)
-			{
-				LL_GPIO_ResetOutputPin(GPIOB, LL_GPIO_PIN_3);
-			}
-			else
-			{
-				LL_GPIO_SetOutputPin(GPIOB, LL_GPIO_PIN_3);
-			}
-
-			count = 0;
-			return;
+	if(count) {
+		if(ch == prikaz1[count]){
+			count++;
+			state = 1;
 		}
+		else if(ch == prikaz2[count]){
+			count++;
+			state = 2;
+		}
+
+		else
+			count = 0;
+	}
+
+	if(ch == 'l')
+		count = 1;
+
+	if(state==1 && count == 5){
+		LL_GPIO_SetOutputPin(GPIOB, LL_GPIO_PIN_3);
+		state = 0;
+		count = 0;
+	}
+	if(state==2 && count == 6) {
+		LL_GPIO_ResetOutputPin(GPIOB, LL_GPIO_PIN_3);
+		state = 0;
+		count = 0;
 	}
 }
 
